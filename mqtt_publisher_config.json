@@ -1,0 +1,25 @@
+{
+    "interval": 1200,
+    "topic_prefix": "sensors/xiaomi_mijia/",
+    "mqtt_user": "xiaomi",
+    "mqtt_pw": "xiaomi",
+    "mqtt_vhost": "smarthome",
+    "mqtt_host": "192.168.178.42",
+    "mqtt_port": 1883,
+    "python_command": "python3.8",
+    "sensors":
+        [
+            {
+            "mac": "A4:C1:38:42:33:34",
+            "tag": "Balcony"
+            },
+            {
+            "mac": "A4:C1:38:BE:CA:6C",
+            "tag": "Bathroom"
+            },
+            {
+            "mac": "A4:C1:38:4C:E3:77",
+            "tag": "Kitchen Window Outside"
+            }
+        ]
+}
