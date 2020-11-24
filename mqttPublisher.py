@@ -63,35 +63,38 @@ while True:
                 "3",
             ]
             logger.debug(f"Command: {' '.join(command)}")
-            p = subprocess.Popen(
-                command,
-                cwd=dir_path,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-            )
-            output, errors = p.communicate()
+            try:
+                p = subprocess.Popen(
+                    command,
+                    cwd=dir_path,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+                output, errors = p.communicate(timeout=300)
 
-            logger.debug(f"Errors:\n{errors}")
-            logger.debug(f"Output:\n{output}")
+                logger.debug(f"Errors:\n{errors}")
+                logger.debug(f"Output:\n{output}")
 
-            dict_from_output = {}
-            for line in output.split("\n"):
-                line_yaml = yaml.safe_load(line)
-                if type(line_yaml) == dict:
-                    for i in line_yaml:
-                        if type(line_yaml[i]) == str:
-                            line_yaml[i] = re.sub("[^\d\.]", "", line_yaml[i])
-                        line_yaml[i] = float(line_yaml[i])
-                    dict_from_output.update(line_yaml)
-            logger.debug(dict_from_output)
-            if len(dict_from_output) > 0:
-                topic = config["topic_prefix"] + sensor["mac"].replace(":", "-")
-                payload_dict = {"MAC": sensor["mac"], "tag": sensor["tag"]}
-                payload_dict.update(dict_from_output)
-                client.publish(topic, json.dumps(payload_dict))
-            else:
-                logger.info("Did not get any data from program call")
+                dict_from_output = {}
+                for line in output.split("\n"):
+                    line_yaml = yaml.safe_load(line)
+                    if type(line_yaml) == dict:
+                        for i in line_yaml:
+                            if type(line_yaml[i]) == str:
+                                line_yaml[i] = re.sub("[^\d\.]", "", line_yaml[i])
+                            line_yaml[i] = float(line_yaml[i])
+                        dict_from_output.update(line_yaml)
+                logger.debug(dict_from_output)
+                if len(dict_from_output) > 0:
+                    topic = config["topic_prefix"] + sensor["mac"].replace(":", "-")
+                    payload_dict = {"MAC": sensor["mac"], "tag": sensor["tag"]}
+                    payload_dict.update(dict_from_output)
+                    client.publish(topic, json.dumps(payload_dict))
+                else:
+                    logger.info("Did not get any data from program call")
+            except subprocess.TimeoutExpired as e:
+                logger.error(e)
     time.sleep(.2)
     client.loop()
     if not client.is_connected():
