@@ -14,6 +14,7 @@ import logging
 import time
 import os
 import re
+import sys
 
 logger = logging.getLogger("root")
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -24,15 +25,12 @@ connected = False
 
 
 def on_connect(client, userdata, flags, rc):
-    global connected
-    connected = True
     print("Connected with flags [%s] rtn code [%d]"% (flags, rc) )
+    client.loop_start()
 
 def on_disconnect(client, userdata, rc):
-    global connected
-    connected = False
     print("disconnected with rtn code [%d]"% (rc) )
-    client.connect()
+    client.reconnect()
 
 with open(dir_path + "/mqtt_publisher_config.json", "r") as config_file:
     config = yaml.safe_load(config_file)
@@ -44,12 +42,12 @@ client.on_disconnect = on_disconnect
 client.username_pw_set(
     config["mqtt_vhost"] + ":" + config["mqtt_user"], config["mqtt_pw"]
 )
-client.connect(host=config["mqtt_host"], port=config["mqtt_port"], )
-client.loop_start()
+client.connect(host=config["mqtt_host"], port=config["mqtt_port"], keepalive=30)
+
 
 last_start = 0
 while True:
-    if time.time() - last_start > config["interval"] and connected:
+    if time.time() - last_start > config["interval"] and client.is_connected():
         last_start = time.time()
         for sensor in config["sensors"]:
             command = [
@@ -94,4 +92,11 @@ while True:
                 client.publish(topic, json.dumps(payload_dict))
             else:
                 logger.info("Did not get any data from program call")
-    time.sleep(1)
+    time.sleep(.2)
+    client.loop()
+    if not client.is_connected():
+        client.reconnect()
+        time.sleep(10)
+        if not client.is_connected():
+            raise ConnectionError("MQTT reconnect failed")
+            sys.exit()
