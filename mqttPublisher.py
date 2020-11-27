@@ -95,6 +95,7 @@ while True:
                     logger.info("Did not get any data from program call")
             except subprocess.TimeoutExpired as e:
                 logger.error(e)
+                p.kill()
     time.sleep(.2)
     client.loop()
     if not client.is_connected():
